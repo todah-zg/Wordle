@@ -1,1 +1,44 @@
-# Codemagic.yaml
+workflows:
+  android-workflow:
+    name: Android Workflow
+    max_build_duration: 120
+    environment:
+      groups:
+        - Firebase
+        - Google
+      vars:
+        CM_KEYSTORE_PATH: /tmp/keystore.keystore
+        PACKAGE_NAME: 'io.codemagic.marijan.wordle' # <-- Put your package name here e.g. "io.codemagic.flutteryaml"
+        GOOGLE_PLAY_TRACK: 'alpha' # <-- Any default or custom track that is not in ‘draft’ status
+      android_signing:
+        - marijan_android_keystore # <-- includes CM_KEYSTORE, CM_KEYSTORE_PASSWORD, CM_KEY_PASSWORD, CM_KEY_ALIAS
+      flutter: stable
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Load Firebase configuration
+        script: |
+          #!/usr/bin/env sh
+          set -e # exit on first failed command
+          echo $GOOGLE_SERVICES_JSON > $CM_BUILD_DIR/android/app/google-services.json
+
+      - name: Get Flutter packages
+        script: |
+          cd . && flutter packages pub get
+      - name: Build APK with Flutter
+        script: |
+          cd . && flutter build apk --release --build-name=1.0.3 --build-number=4
+    artifacts:
+      - build/**/outputs/bundle/**/*.aab
+      - build/**/outputs/apk/**/*.apk
+      - build/**/outputs/**/mapping.txt
+      - flutter_drive.log
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT
+        android:
+          app_id: 1:847954564454:android:876abdaf7e640c005464a7
+          groups:
+            - android_testers
+          artifact_type: 'apk'

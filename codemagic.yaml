@@ -41,3 +41,7 @@ workflows:
           groups:
             - android_testers
           artifact_type: 'apk'
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/.gradle/caches
